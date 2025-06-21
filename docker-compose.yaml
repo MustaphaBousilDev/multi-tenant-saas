@@ -1,36 +1,193 @@
-version: '3.8'
+version: '3.9'
 
 services:
+  # Infrastructure Services (same as before)
   postgres:
-    image: postgres:14
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: multi_tenant_saas
+      POSTGRES_DB: saas_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: postgres123
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  rabbitmq:
-    image: rabbitmq:3-management
+  mysql:
+    image: mysql:8.0
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: password
+      MYSQL_ROOT_PASSWORD: mysql123
+      MYSQL_DATABASE: billing_db
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql123
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "6000:3306"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - mysql_data:/var/lib/mysql
+
+  mongodb:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: mongo123
+    ports:
+      - "27200:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+  kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      container_name: saas-kafka-ui
+      depends_on:
+        - kafka
+      environment:
+        KAFKA_CLUSTERS_0_NAME: local
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+        KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      ports:
+        - "8099:8080"
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
 
   redis:
     image: redis:7-alpine
+    command: redis-server --requirepass redis123
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
 
+  # Application Services with Dynamic BUILD
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+        SERVICE_PORT: 4000
+    container_name: saas-api-gateway
+    environment:
+      SERVICE_NAME: api-gateway
+      PORT: 4000
+      NODE_ENV: ${NODE_ENV:-development}
+      KAFKA_BROKERS: kafka:9092
+      POSTGRES_URL: ${POSTGRES_URL}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+
+  tenant-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: tenant-service
+        SERVICE_PORT: 3001
+    container_name: saas-tenant-service
+    environment:
+      SERVICE_NAME: tenant-service
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-development}
+      KAFKA_BROKERS: kafka:9092
+      POSTGRES_URL: ${POSTGRES_URL}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+        SERVICE_PORT: 3002
+    container_name: saas-auth-service
+    environment:
+      SERVICE_NAME: auth-service
+      PORT: 3002
+      NODE_ENV: ${NODE_ENV:-development}
+      KAFKA_BROKERS: kafka:9092
+      POSTGRES_URL: ${POSTGRES_URL}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: billing-service
+        SERVICE_PORT: 3003
+    container_name: saas-billing-service
+    environment:
+      SERVICE_NAME: billing-service
+      PORT: 3003
+      NODE_ENV: ${NODE_ENV:-development}
+      KAFKA_BROKERS: kafka:9092
+      MYSQL_URL: ${MYSQL_URL}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3003:3003"
+    depends_on:
+      - mysql
+      - kafka
+      - redis
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: analytics-service
+        SERVICE_PORT: 3004
+    container_name: saas-analytics-service
+    environment:
+      SERVICE_NAME: analytics-service
+      PORT: 3004
+      NODE_ENV: ${NODE_ENV:-development}
+      KAFKA_BROKERS: kafka:9092
+      MONGODB_URL: ${MONGODB_URL}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3004:3004"
+    depends_on:
+      - mongodb
+      - kafka
+      - redis
+
 volumes:
   postgres_data:
-  rabbitmq_data:
+  mysql_data:
+  mongodb_data:
   redis_data:
