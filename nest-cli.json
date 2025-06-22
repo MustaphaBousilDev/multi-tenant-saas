@@ -64,15 +64,6 @@
         "tsConfigPath": "libs/common/tsconfig.lib.json"
       }
     },
-    "customization-service": {
-      "type": "application",
-      "root": "apps/customization-service",
-      "entryFile": "main",
-      "sourceRoot": "apps/customization-service/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/customization-service/tsconfig.app.json"
-      }
-    },
     "database": {
       "type": "library",
       "root": "libs/database",
@@ -82,24 +73,8 @@
         "tsConfigPath": "libs/database/tsconfig.lib.json"
       }
     },
-    "integration-service": {
-      "type": "application",
-      "root": "apps/integration-service",
-      "entryFile": "main",
-      "sourceRoot": "apps/integration-service/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/integration-service/tsconfig.app.json"
-      }
-    },
-    "multi-tenant-saas": {
-      "type": "application",
-      "root": "apps/multi-tenant-saas",
-      "entryFile": "main",
-      "sourceRoot": "apps/multi-tenant-saas/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/multi-tenant-saas/tsconfig.app.json"
-      }
-    },
+    
+    
     "rabbitmq": {
       "type": "library",
       "root": "libs/rabbitmq",
