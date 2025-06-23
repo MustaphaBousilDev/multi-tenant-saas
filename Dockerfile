@@ -3,14 +3,9 @@ ARG NODE_VERSION=18.18.2
 ARG SERVICE_NAME
 ARG SERVICE_PORT=3000
 
-# =============================================================================
-# Dependencies stage - Install all dependencies
-# =============================================================================
 FROM node:${NODE_VERSION}-alpine AS dependencies
-
 # Install system dependencies
 RUN apk add --no-cache dumb-init openssl bash curl
-
 WORKDIR /app
 
 # Copy package files
@@ -25,7 +20,6 @@ RUN npm ci --frozen-lockfile && npm cache clean --force
 # Build stage - Build with automated Prisma generation
 # =============================================================================
 FROM dependencies AS build
-
 ARG SERVICE_NAME
 
 # Copy scripts first
