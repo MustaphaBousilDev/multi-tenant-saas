@@ -203,7 +203,7 @@ services:
       MONGODB_URL: ${MONGODB_URL}
       REDIS_URL: redis://redis:6379
     expose:
-      - "3004"
+      - "1234"
     depends_on:
       - mongodb
       - kafka
