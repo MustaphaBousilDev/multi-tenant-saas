@@ -3,16 +3,13 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ApiGatewayService {
-  constructor(private readonly configService: ConfigService) {}
-  getHello(): string {
-    return 'Hello World!';
-  }
+  constructor(private configService: ConfigService) {}
 
   getInfo() {
     return {
       service: 'API Gateway',
       version: '1.0.0',
-      environment: this.configService.get<string>('NODE_ENV'),
+      environment: this.configService.get('NODE_ENV'),
       timestamp: new Date().toISOString(),
       features: {
         graphql: true,
