@@ -6,7 +6,6 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { join } from 'path';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { GraphQLConfigService } from './config/graphql.config';

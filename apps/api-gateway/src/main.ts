@@ -11,34 +11,41 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug'],
   });
   const configService = app.get(ConfigService);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const port = configService.get('PORT', 4000);
-  const environment = configService.get('NODE_ENV', 'development');
-  app.use(helmet({
-    contentSecurityPolicy: environment === 'production' ? undefined : false,
-    crossOriginEmbedderPolicy: false,
-  }));
+  const environment = configService.get<string>('NODE_ENV', 'development');
+  app.use(
+    helmet({
+      contentSecurityPolicy: environment === 'production' ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
   app.enableCors({
-    origin: configService.get('CORS_ORIGINS', 'http://localhost:3000').split(','),
+    origin: configService
+      .get<string>('CORS_ORIGINS', 'http://localhost:3000')
+      .split(','),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
-      'X-Requested-With', 
+      'X-Requested-With',
       'Content-Type',
       'Accept',
       'Authorization',
       'X-Tenant-ID',
-      'X-API-Key'
+      'X-API-Key',
     ],
   });
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
   app.setGlobalPrefix('api/v1', {
     exclude: ['health', 'graphql'],
   });
@@ -76,13 +83,11 @@ async function bootstrap() {
     });
   }
   await app.listen(port, '0.0.0.0');
-  
+
   logger.log(`🚀 API Gateway is running on: http://localhost:${port}`);
   logger.log(`📚 GraphQL Playground: http://localhost:${port}/graphql`);
   if (environment !== 'production') {
     logger.log(`📖 API Documentation: http://localhost:${port}/api/docs`);
   }
-
-
 }
 bootstrap();
